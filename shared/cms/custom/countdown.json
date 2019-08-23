@@ -1,0 +1,7 @@
+{
+  "title": "Countdown Module",
+  "author": "Genome",
+  "description": "A module for displaying a countdown",
+  "name": "countdown",
+  "class": "Xibo\\Custom\\Countdown\\Countdown"
+}
