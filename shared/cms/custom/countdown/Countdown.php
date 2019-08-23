@@ -43,9 +43,6 @@ class Countdown extends \Xibo\Widget\ModuleWidget
      */
     public function installFiles()
     {
-        $this->mediaFactory->createModuleSystemFile(PROJECT_ROOT . '/modules/vendor/jquery-1.11.1.min.js')->save();
-        $this->mediaFactory->createModuleSystemFile(PROJECT_ROOT . '/modules/vendor/moment.js')->save();
-
         // Install resource files
         $folder = PROJECT_ROOT . '/custom/countdown/resources';
         foreach ($this->mediaFactory->createModuleFileFromFolder($folder) as $media) {
@@ -74,22 +71,106 @@ class Countdown extends \Xibo\Widget\ModuleWidget
         $this
             ->initialiseGetResource()
             ->appendViewPortWidth($this->region->width)
-            ->appendJavaScriptFile('jquery-1.11.1.min.js')
+            ->appendJavaScriptFile('vendor/jquery-1.11.1.min.js')
             ->appendJavaScriptFile('jquery.countdown.min.js')
-            ->appendBody('<div id="countdown"></div>')
+            ->appendJavaScriptFile('lodash.min.js')
             ->appendCssFile('countdown.css')
+            ->appendBody('.
+                <div id="countdown"></div>
+                <script type="text/template" id="countdown-template">
+                <div class="time <%= label %>">
+                    <span class="count curr top"><%= curr %></span>
+                    <span class="count next top"><%= next %></span>
+                    <span class="count next bottom"><%= next %></span>
+                    <span class="count curr bottom"><%= curr %></span>
+                    <span class="label"><%= label.length < 6 ? label : label.substr(0, 3)  %></span>
+                </div>
+                </script>
+            ')
             ->appendJavaScript('
-                $("#countdown").countdown("' . $finalDate . '", function(event) {
-                    $(this).html(event.strftime(""
-                        + "<div><span class=\"unit\">%w</span><span>weeks</span></div>"
-                        + "<div><span class=\"unit\">%d</span><span>days</span></div>"
-                        + "<div><span class=\"unit\">%H</span><span>hours</span></div>"
-                        + "<div><span class=\"unit\">%M</span><span>min</span></div>"
-                        + "<div><span class=\"unit\">%S</span><span>sec</span></div>"
-                    ));
+                var labels = ["weeks", "days", "hours", "minutes", "seconds"];
+                var finalDate = "'. $finalDate .'";
+                var template = _.template($("#countdown-template").html());
+                var currentDate = "00:00:00:00:00";
+                var nextDate = "00:00:00:00:00";
+                var parser = /([0-9]{2})/gi;
+                var $countdown = $("#countdown");
+                
+                // Parse countdown string to an object
+                function strfobj(str) {
+                var parsed = str.match(parser);
+                var obj = {};
+                
+                labels.forEach((label, i) => {
+                    obj[label] = parsed[i];
+                });
+                
+                return obj;
+                }
+                
+                // Return the time components that diffs
+                function diff(obj1, obj2) {
+                var diff = [];
+                
+                labels.forEach(function(key) {
+                    if (obj1[key] !== obj2[key]) {
+                    diff.push(key);
+                    }
+                });
+                
+                return diff;
+                }
+                
+                // Build the layout
+                var initialData = strfobj(currentDate);
+                
+                labels.forEach(function(label, i) {
+                $countdown.append(
+                    template({
+                    curr: initialData[label],
+                    next: initialData[label],
+                    label: label,
+                    })
+                );
+                });
+                
+                // Starts the countdown
+                $countdown.countdown(finalDate, function(event) {
+                var newDate = event.strftime("%w:%d:%H:%M:%S");
+                var data;
+                
+                if (newDate !== nextDate) {
+                    currentDate = nextDate;
+                    nextDate = newDate;
+                
+                    // Setup the data
+                    data = {
+                    curr: strfobj(currentDate),
+                    next: strfobj(nextDate),
+                    };
+                
+                    // Apply the new values to each node that changed
+                    diff(data.curr, data.next).forEach(function(label) {
+                    var selector = ".%s".replace(/%s/, label);
+                    var $node = $countdown.find(selector);
+                    
+                    // Update the node
+                    $node.removeClass("flip");
+                    $node.find(".curr").text(data.curr[label]);
+                    $node.find(".next").text(data.next[label]);
+                    
+                    // Wait for a repaint to then flip
+                    _.delay(
+                        function($node) {
+                        $node.addClass("flip");
+                        },
+                        50,
+                        $node
+                    );
+                    });
+                }
                 });
             ');
-            
 
         return $this->finaliseGetResource();
     }
