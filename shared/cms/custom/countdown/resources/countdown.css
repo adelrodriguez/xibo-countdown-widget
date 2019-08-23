@@ -92,8 +92,6 @@ body {
 }
 
 #countdown .count.top {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.125em 0.125em 0 0;
   height: 50%;
 
@@ -110,8 +108,7 @@ body {
   background-image: -moz-linear-gradient(rgba(255, 255, 255, 0.1), transparent);
   background-image: -ms-linear-gradient(rgba(255, 255, 255, 0.1), transparent);
   background-image: -o-linear-gradient(rgba(255, 255, 255, 0.1), transparent);
-  border-top: 0.0125em solid #000;
-  border-bottom: 0.0125em solid #000;
+  border-bottom: 0.025em solid #000;
   border-radius: 0 0 0.125em 0.125em;
   line-height: 0;
   height: 50%;
